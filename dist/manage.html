@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VenoPag - Painel de Gestão</title>
+  <style>
+    :root {
+      --primary: #1a1a2e;
+      --secondary: #16213e;
+      --accent: #e94560;
+      --light: #f5f5f5;
+      --text: #2d3436;
+      --muted: #848484;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--primary);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+    }
+    
+    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+    
+    h1, h2, h3 { color: var(--light); }
+    
+    .card {
+      background: var(--secondary);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    
+    .card-title {
+      color: var(--accent);
+      margin-top: 0;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #3a4b6b;
+    }
+    
+    .form-group { margin-bottom: 15px; }
+    
+    .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--light); }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 8px;
+      background: var(--primary);
+      border: 1px solid #4a5b77;
+      border-radius: 4px;
+      color: var(--light);
+      font-size: 14px;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+    
+    .btn:hover { background: #ff5a71; }
+    
+    .btn-secondary {
+      background: #4a5b77;
+    }
+    
+    .btn-secondary:hover { background: #5a6b87; }
+    
+    .result {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 4px;
+      display: none;
+    }
+    
+    .result.success { background: #2ecc71; color: white; display: block; }
+    .result.error { background: var(--accent); color: white; display: block; }
+    
+    .nav {
+      overflow: hidden;
+      background: var(--secondary);
+    }
+    
+    .nav a {
+      float: left;
+      display: block;
+      color: var(--light);
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+    }
+    
+    .nav a:hover { background: var(--primary); color: var(--accent); }
+    .nav a.active { background: var(--primary); color: var(--accent); }
+    
+    @media (max-width: 600px) {
+      .nav a { float: none; width: 100%; display: block; }
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="#" class="active" onclick="showSection('dashboard')">Dashboard</a>
+    <a href="#" onclick="showSection('cashin')">Criar Cobrança (Cash In)</a>
+    <a href="#" onclick="showSection('cashout')">Saque (Cash Out)</a>
+    <a href="#" onclick="showSection('consultar')">Consultar Status</a>
+    <a href="#" onclick="showSection('saldo')">Consultar Saldo</a>
+    <a href="#" onclick="showSection('transferir')">Transferir</a>
+  </div>
+  
+  <div class="container" id="main-content">
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="card">
+      <h2 class="card-title">Painel VenoPag</h2>
+      <p>Selecione uma operação acima para começar.</p>
+      <pre style="background: #0d1117; color: #a5d6a7; padding: 10px; border-radius: 4; margin-top: 10px; font-size: 12px;">
+import { VenoPagClient } from 'venopag';
+
+const client = new VenoPagClient({
+  clientId: 'SEU_CLIENT_ID',
+  clientSecret: 'SEU_CLIENT_SECRET',
+});
+
+client.criarCashin(150, 'Nome', '12345678901');
+</pre>
+    </section>
+    
+    <!-- Cash In Section -->
+    <section id="cashin" class="card" style="display: none;">
+      <h2 class="card-title">Criar Cobrança PIX (Cash In)</h2>
+      <div class="form-group"><label>Valor (R$)</label><input type="number" id="cashin-amount" step="0.01" required></div>
+      <div class="form-group"><label>Nome do cliente</label><input type="text" id="cashin-name" placeholder="Nome do cliente"></div>
+      <div class="form-group"><label>Documento (CPF/CNPJ)</label><input type="text" id="cashin-document" placeholder="Somente dígitos"></div>
+      <div class="form-group"><label>Descrição (opcional)</label><input type="text" id="cashin-description" placeholder="Descrição do pedido"></div>
+      <div class="form-group"><label>Webhook URL</label><input type="text" id="cashin-webhook" placeholder="https://seusistema.com/webhooks/venopag"></div>
+      <div class="form-group"><label>Splits (opcional)</label><input type="text" id="cashin-splits" placeholder='[[{username:"usuario1",percentage:10}]]'></div>
+      <button class="btn" onclick="createCashIn()">Criar Cobrança</button>
+      <div id="cashin-result" class="result"></div>
+    </section>
+    
+    <!-- Cash Out Section -->
+    <section id="cashout" class="card" style="display: none;">
+      <h2 class="card-title">Saque PIX (Cash Out)</h2>
+      <div class="form-group"><label>Valor (R$)</label><input type="number" id="cashout-amount" step="0.01" required></div>
+      <div class="form-group"><label>Nome do beneficiário</label><input type="text" id="cashout-name" required></div>
+      <div class="form-group"><label>Documento do beneficiário</label><input type="text" id="cashout-document" required></div>
+      <div class="form-group"><label>Chave PIX</label><input type="text" id="cashout-key" required></div>
+      <div class="form-group"><label>Tipo da chave</label>
+        <select id="cashout-type">
+          <option value="EMAIL">EMAIL</option>
+          <option value="CPF">CPF</option>
+          <option value="CNPJ">CNPJ</option>
+          <option value="EVP">EVP</option>
+          <option value="QRCODE">QRCODE</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Webhook URL</label><input type="text" id="cashout-webhook" required></div>
+      <button class="btn" onclick="createCashOut()">Solicitar Saque</button>
+      <div id="cashout-result" class="result"></div>
+    </section>
+    
+    <!-- Consult Status Section -->
+    <section id="consultar" class="card" style="display: none;">
+      <h2 class="card-title">Consultar Status da Transação</h2>
+      <div class="form-group"><label>Número do pedido (request_number)</label><input type="text" id="consult-req" required></div>
+      <button class="btn" onclick="consultStatus()">Consultar</button>
+      <div id="consult-result" class="result"></div>
+    </section>
+    
+    <!-- Consult Saldo Section -->
+    <section id="saldo" class="card" style="display: none;">
+      <h2 class="card-title">Consultar Saldo da Conta</h2>
+      <button class="btn" onclick="consultSaldo()">Consultar</button>
+      <div id="saldo-result" class="result"></div>
+    </section>
+    
+    <!-- Transfer Section -->
+    <section id="transferir" class="card" style="display: none;">
+      <h2 class="card-title">Transferir Entre Contas</h2>
+      <div class="form-group"><label>Para (username ou e-mail)</label><input type="text" id="transfer-to" required></div>
+      <div class="form-group"><label>Valor (R$)</label><input type="number" id="transfer-amount" step="0.01" required></div>
+      <div class="form-group"><label>ID externo</label><input type="text" id="transfer-external" placeholder="ex: repasse-1001"></div>
+      <div class="form-group"><label>Descrição (opcional)</label><input type="text" id="transfer-description"></div>
+      <button class="btn" onclick="transferir()">Transferir</button>
+      <div id="transfer-result" class="result"></div>
+    </section>
+  </div>
+  
+  <script>
+    let client;
+    
+    try {
+      client = new (require ? require('./venopag') : VenoPagClient)({
+        clientId: 'SEU_CLIENT_ID',
+        clientSecret: 'SEU_CLIENT_SECRET'
+      });
+      console.log('Cliente VenoPag inicializado');
+    } catch (error) {
+      console.error('Erro ao inicializar cliente:', error);
+      client = {
+        criarCashin: async () => { throw new Error('Cliente não inicializado'); },
+        consultarStatus: async () => { throw new Error('Cliente não inicializado'); },
+        consultarSaldo: async () => { throw new Error('Cliente não inicializado'); },
+        criarCashout: async () => { throw new Error('Cliente não inicializado'); },
+        transferir: async () => { throw new Error('Cliente não inicializado'); }
+      };
+    }
+    
+    function showSection(sectionId) {
+      document.querySelectorAll('#main-content section').forEach(sec => sec.style.display = 'none');
+      document.getElementById(sectionId).style.display = 'block';
+      document.querySelectorAll('.nav a').forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('onclick').includes(sectionId)) link.classList.add('active');
+      });
+    }
+    
+    function parseSplits(input) {
+      try { return JSON.parse(input); }
+      catch { return []; }
+    }
+    
+    async function createCashIn() {
+      const amount = document.getElementById('cashin-amount').value;
+      const name = document.getElementById('cashin-name').value;
+      const document = document.getElementById('cashin-document').value;
+      const description = document.getElementById('cashin-description').value;
+      const webhook = document.getElementById('cashin-webhook').value;
+      const splits = parseSplits(document.getElementById('cashin-splits').value);
+      
+      if (!client) return showResult('cashin-result', 'error', 'Cliente não inicializado');
+      
+      try {
+        const response = await client.criarCashin(parseFloat(amount), name, document, description, webhook, splits);
+        showResult('cashin-result', 'success', `✅ Cobrança criada! Request: ${response.request_number} Status: ${response.status} QR: ${response.qr_url}`);
+      } catch (error) {
+        showResult('cashin-result', 'error', `❌ Erro: ${error.message || error}\nCódigo: ${error.errorCode || 'N/A'}`);
+      }
+    }
+    
+    async function createCashOut() {
+      const amount = document.getElementById('cashout-amount').value;
+      const name = document.getElementById('cashout-name').value;
+      const document = document.getElementById('cashout-document').value;
+      const key = document.getElementById('cashout-key').value;
+      const type = document.getElementById('cashout-type').value;
+      const webhook = document.getElementById('cashout-webhook').value;
+      
+      if (!client) return showResult('cashout-result', 'error', 'Cliente não inicializado');
+      
+      try {
+        const response = await client.criarCashout(parseFloat(amount), name, document, key, type, webhook);
+        showResult('cashout-result', 'success', `✅ Saque criado! E2E: ${response.e2e} Status: ${response.status} Taxa: R$ ${response.fee.toFixed(2)}`);
+      } catch (error) {
+        showResult('cashout-result', 'error', `❌ Erro: ${error.message || error}\nCódigo: ${error.errorCode || 'N/A'}`);
+      }
+    }
+    
+    async function consultStatus() {
+      const reqNum = document.getElementById('consult-req').value;
+      if (!client) return showResult('consult-result', 'error', 'Cliente não inicializado');
+      
+      try {
+        const response = await client.consultarStatus(reqNum);
+        showResult('consult-result', 'success', `✅ Status: ${response.status}\nType: ${response.type}\nAmount: R$ ${response.amount.toFixed(2)} remaining: ${response.remaining} min`);
+      } catch (error) {
+        showResult('consult-result', 'error', `❌ Erro: ${error.message || error}\nCódigo: ${error.errorCode || 'N/A'}`);
+      }
+    }
+    
+    async function consultSaldo() {
+      if (!client) return showResult('saldo-result', 'error', 'Cliente não inicializado');
+      
+      try {
+        const response = await client.consultarSaldo();
+        showResult('saldo-result', 'success', `✅ Disponível: R$ ${response.balance.available.toFixed(2)} Bloqueado: R$ ${response.balance.blocked.toFixed(2)} Total: R$ ${response.balance.total.toFixed(2)} Atualizado: ${response.updated_at}`);
+      } catch (error) {
+        showResult('saldo-result', 'error', `❌ Erro: ${error.message || error}\nCódigo: ${error.errorCode || 'N/A'}`);
+      }
+    }
+    
+    async function transferir() {
+      const to = document.getElementById('transfer-to').value;
+      const amount = document.getElementById('transfer-amount').value;
+      const externalId = document.getElementById('transfer-external').value || 'auto';
+      const description = document.getElementById('transfer-description').value;
+      
+      if (!client) return showResult('transfer-result', 'error', 'Cliente não inicializado');
+      
+      try {
+        const response = await client.transferir(to, parseFloat(amount), externalId, description);
+        showResult('transfer-result', 'success', `✅ Transferência criada! E2E: ${response.e2e} Status: ${response.status} Para: ${response.to} Valor: R$ ${response.amount.toFixed(2)}`);
+      } catch (error) {
+        showResult('transfer-result', 'error', `❌ Erro: ${error.message || error}\nCódigo: ${error.errorCode || 'N/A'}`);
+      }
+    }
+    
+    function showResult(elementId, type, message) {
+      const result = document.getElementById(elementId);
+      result.className = `result ${type}`;
+      result.innerHTML = message;
+      result.style.display = 'block';
+      setTimeout(() => result.style.display = 'none', 5000);
+    }
+  </script>
+</body>
+</html>

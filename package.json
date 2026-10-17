@@ -1,0 +1,37 @@
+{
+  "name": "venopag",
+  "version": "1.0.0",
+  "description": "SDK oficial VenoPag para integração com pagamentos PIX",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node -e \"const { VenoPagClient } = require('./dist/client'); console.log('VenoPag SDK carregado com sucesso');\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "venopag",
+    "pix",
+    "gateway",
+    "payments"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "playwright": "^1.64.1",
+    "typescript": "^7.0.2"
+  }
+}
